@@ -701,51 +701,52 @@ end)
 
 function PoliceCall()
     if not AlertSend then
-        local pos = GetEntityCoords(GetPlayerPed(-1))
-        local chance = 20
+        local ped = PlayerPedId()
+        local pos = GetEntityCoords(ped)
+        local chance = Config.PoliceAlertChance
         if GetClockHours() >= 1 and GetClockHours() <= 6 then
-            chance = 10
+            chance = Config.PoliceNightAlertChance
         end
-        if math.random(1, 100) <= chance then
+        if math.random() <= chance then
             local closestPed = GetNearbyPed()
             if closestPed ~= nil then
                 local msg = ""
-                local s1, s2 = Citizen.InvokeNative(0x2EB41072B4C1E4C0, pos.x, pos.y, pos.z, Citizen.PointerValueInt(), Citizen.PointerValueInt())
+                local s1, s2 = GetStreetNameAtCoord(pos.x, pos.y, pos.z)
                 local streetLabel = GetStreetNameFromHashKey(s1)
                 local street2 = GetStreetNameFromHashKey(s2)
-                if street2 ~= nil and street2 ~= "" then 
+                if street2 ~= nil and street2 ~= "" then
                     streetLabel = streetLabel .. " " .. street2
                 end
                 local alertTitle = ""
-                if IsPedInAnyVehicle(GetPlayerPed(-1)) then
-                    local vehicle = GetVehiclePedIsIn(GetPlayerPed(-1), false)
-                    local modelName = GetEntityModel(vehicle)
-                    if QBCore.Shared.VehicleModels[modelName] ~= nil then
-                        Name = QBCore.Shared.Vehicles[QBCore.Shared.VehicleModels[modelName]["model"]]["brand"] .. ' ' .. QBCore.Shared.Vehicles[QBCore.Shared.VehicleModels[modelName]["model"]]["name"]
+                if IsPedInAnyVehicle(ped) then
+                    local vehicle = GetVehiclePedIsIn(ped, false)
+                    local modelName = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)):lower()
+                    if QBCore.Shared.Vehicles[modelName] ~= nil then
+                        Name = QBCore.Shared.Vehicles[modelName]["brand"] .. ' ' .. QBCore.Shared.Vehicles[modelName]["name"]
                     else
                         Name = "Unknown"
                     end
-                    local modelPlate = GetVehicleNumberPlateText(vehicle)
-                    local msg = "10-60 | Vehicle theft attempt at " ..streetLabel.. ". Vehicle: " .. Name .. ", Licensplate: " .. modelPlate
-                    local alertTitle = "10-60 | Vehicle theft attempt at"
+                    local modelPlate = QBCore.Functions.GetPlate(vehicle)
+                    local msg = "Vehicle theft attempt at " .. streetLabel .. ". Vehicle: " .. Name .. ", Licenseplate: " .. modelPlate
+                    local alertTitle = "Vehicle theft attempt at"
                     TriggerServerEvent("police:server:VehicleCall", pos, msg, alertTitle, streetLabel, modelPlate, Name)
                 else
                     local vehicle = QBCore.Functions.GetClosestVehicle()
-                    local modelName = GetEntityModel(vehicle)
-                    local modelPlate = GetVehicleNumberPlateText(vehicle)
-                    if QBCore.Shared.VehicleModels[modelName] ~= nil then
-                        Name = QBCore.Shared.Vehicles[QBCore.Shared.VehicleModels[modelName]["model"]]["brand"] .. ' ' .. QBCore.Shared.Vehicles[QBCore.Shared.VehicleModels[modelName]["model"]]["name"]
+                    local modelName = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)):lower()
+                    local modelPlate = QBCore.Functions.GetPlate(vehicle)
+                    if QBCore.Shared.Vehicles[modelName] ~= nil then
+                        Name = QBCore.Shared.Vehicles[modelName]["brand"] .. ' ' .. QBCore.Shared.Vehicles[modelName]["name"]
                     else
                         Name = "Unknown"
                     end
-                    local msg = "10-60 | Vehicle theft attempt at " ..streetLabel.. ". Vehicle: " .. Name .. ", Licenceplate: " .. modelPlate
-                    local alertTitle = "10-60 | Vehicle theft attempt at"
+                    local msg = "Vehicle theft attempt at " .. streetLabel .. ". Vehicle: " .. Name .. ", Licenseplate: " .. modelPlate
+                    local alertTitle = "Vehicle theft attempt at"
                     TriggerServerEvent("police:server:VehicleCall", pos, msg, alertTitle, streetLabel, modelPlate, Name)
                 end
             end
         end
         AlertSend = true
-        SetTimeout(2 * (60 * 1000), function()
+        SetTimeout(Config.AlertCooldown, function()
             AlertSend = false
         end)
     end
@@ -806,3 +807,4 @@ function loadAnimDict( dict )
         Citizen.Wait( 0 )
     end
 end
+
