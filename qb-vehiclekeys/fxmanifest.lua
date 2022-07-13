@@ -9,4 +9,5 @@ client_script 'client/main.lua'
 server_script 'server/main.lua'
 
 dependency 'ps-ui'
+
 lua54 'yes'
